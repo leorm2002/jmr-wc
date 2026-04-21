@@ -8,23 +8,17 @@ on:
       - "v*"
     paths:
       - ".github/workflows/docker-wc.yml"
+      - ".dockerignore"
       - "docker/jmr-wc/**"
-      - "docker/jmr-runtime/submitter-log4j2.xml"
-      - "my-mapreduce-job/**"
-      - "mapreduce-parent/pom.xml"
-      - "mapreduce-parent/jmr-client/**"
-      - "mapreduce-parent/jmr-common/**"
-      - "mapreduce-parent/jmr-grpcdataprovider/**"
+      - "pom.xml"
+      - "src/**"
   pull_request:
     paths:
       - ".github/workflows/docker-wc.yml"
+      - ".dockerignore"
       - "docker/jmr-wc/**"
-      - "docker/jmr-runtime/submitter-log4j2.xml"
-      - "my-mapreduce-job/**"
-      - "mapreduce-parent/pom.xml"
-      - "mapreduce-parent/jmr-client/**"
-      - "mapreduce-parent/jmr-common/**"
-      - "mapreduce-parent/jmr-grpcdataprovider/**"
+      - "pom.xml"
+      - "src/**"
   workflow_dispatch:
 
 jobs:
@@ -35,8 +29,15 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout
+      - name: Checkout client repository
         uses: actions/checkout@v4
+
+      - name: Checkout jmr repository
+        uses: actions/checkout@v4
+        with:
+          repository: leorm2002/jmr
+          ref: main
+          path: jmr-upstream
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -44,14 +45,24 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
+          cache-dependency-path: |
+            pom.xml
+            jmr-upstream/mapreduce-parent/pom.xml
+            jmr-upstream/mapreduce-parent/jmr-common/pom.xml
+            jmr-upstream/mapreduce-parent/jmr-client/pom.xml
+            jmr-upstream/mapreduce-parent/jmr-grpcdataprovider/pom.xml
 
-      - name: Install shared MapReduce modules
-        working-directory: mapreduce-parent
-        run: mvn -B -q install -DskipTests
+      - name: Install JMR client dependencies
+        run: >
+          mvn -B -q
+          -f jmr-upstream/mapreduce-parent/pom.xml
+          -pl jmr-client,jmr-grpcdataprovider
+          -am
+          install
+          -DskipTests
 
       - name: Build word count artifact
-        working-directory: my-mapreduce-job
-        run: mvn -B -q package -DskipTests
+        run: mvn -B -q clean package -DskipTests
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

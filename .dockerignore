@@ -1,0 +1,9 @@
+.git
+.github
+data
+docker-output
+jobs
+jmr-upstream
+
+target/*
+!target/my-mapreduce-job-1.0-SNAPSHOT-jar-with-dependencies.jar
