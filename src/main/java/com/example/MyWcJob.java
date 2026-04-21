@@ -20,7 +20,8 @@ public class MyWcJob {
     public static void main(String[] args) throws InterruptedException, JMRException {
 
         if (args.length < 4 || args.length > 6) {
-            System.err.println("Usage: MyWcJob <serialized-books-data-path> <jar-path> <host> <port> [data-provider-host] [csv-output-path]");
+            System.err.println(
+                    "Usage: MyWcJob <serialized-books-data-path> <jar-path> <host> <port> [csv-output-path]");
 
             System.out.println("Received parameters:");
             for (int i = 0; i < args.length; i++) {
@@ -33,8 +34,7 @@ public class MyWcJob {
         final Path jarPath = Path.of(args[1]);
         final String host = args[2];
         final int port = Integer.parseInt(args[3]);
-        final String dataProviderHost = args.length >= 5 ? args[4] : "localhost";
-        final Path resultOutputPath = args.length >= 6 ? Path.of(args[5]) : null;
+        final Path resultOutputPath = args.length >= 5 ? Path.of(args[4]) : null;
         log("Preparing word count job.");
         log("Data directory: " + booksPath);
         log("Master: " + host + ":" + port);
@@ -46,7 +46,8 @@ public class MyWcJob {
         final List<Path> books = new ArrayList<>();
         final Path booksFolder = Path.of(booksPath);
         try (var paths = java.nio.file.Files.list(booksFolder)) {
-            paths.filter(java.nio.file.Files::isRegularFile).filter(path -> path.toString().endsWith(".ser")).forEach(books::add);
+            paths.filter(java.nio.file.Files::isRegularFile).filter(path -> path.toString().endsWith(".ser"))
+                    .forEach(books::add);
         } catch (Exception e) {
             throw new RuntimeException("Failed to list book files in folder: " + booksFolder, e);
         }
@@ -56,8 +57,8 @@ public class MyWcJob {
         log("Found " + books.size() + " serialized input files. Starting local data provider...");
 
         final LocalGrpcDataProvider<String> dataProviderServer = new LocalGrpcDataProvider<>(books);
-        dataProviderServer.setServerHost(dataProviderHost);
-        log("Local data provider ready on host hint " + dataProviderHost + ".");
+        dataProviderServer.setServerHost("localhost");
+        log("Local data provider ready on host on  localhost.");
 
         // Configuro e lancio il job di MapReduce
         final JobConfiguration<String, Integer, Integer> job = Job.builder()//
@@ -89,7 +90,8 @@ public class MyWcJob {
                 while (true) {
                     final it.jmr.client.MapReduceClient.JobProgressSnapshot progress = jmrClient.getJobProgress();
                     final String status = progress.status();
-                    log(String.format("Job status: %s | MAP %d%% | REDUCE %d%%", status, progress.mapProgress(), progress.reduceProgress()));
+                    log(String.format("Job status: %s | MAP %d%% | REDUCE %d%%", status, progress.mapProgress(),
+                            progress.reduceProgress()));
 
                     if ("COMPLETED".equals(status) || "FAILED".equals(status) || "CANCELLED".equals(status)) {
                         finalStatus = status;
@@ -139,7 +141,8 @@ public class MyWcJob {
 
         final List<String> lines = new ArrayList<>(rows.size() + 1);
         lines.add("word,count");
-        rows.stream().sorted(Comparator.comparing(Pair::getFirst)).forEach(row -> lines.add(csvCell(row.getFirst()) + "," + row.getSecond()));
+        rows.stream().sorted(Comparator.comparing(Pair::getFirst))
+                .forEach(row -> lines.add(csvCell(row.getFirst()) + "," + row.getSecond()));
 
         try {
             final Path absoluteOutputPath = resultOutputPath.toAbsolutePath();

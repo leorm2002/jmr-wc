@@ -16,7 +16,7 @@ java -jar jmr-wc.jar <serialized-books-data-path> jmr-wc.jar <master-host> <mast
 Esempio:
 
 ```bash
-java -jar jmr-wc.jar data/serialized jmr-wc.jar 192.168.1.50 9999 outputs/result.csv
+java -jar jmr-wc.jar serialized_data jmr-wc.jar localhost 10000 out.csv
 ```
 
 ### Failing job
@@ -28,7 +28,7 @@ java -jar jmr-wc-failing.jar <serialized-books-data-path> jmr-wc-failing.jar <ma
 Esempio:
 
 ```bash
-java -jar jmr-wc-failing.jar data/serialized jmr-wc-failing.jar 192.168.1.50 9999 map
+java -jar jmr-wc-failing.jar serialized_data jmr-wc-failing.jar localhost 10000 map
 ```
 
 Il secondo argomento `jar-path` deve puntare allo stesso jar si sta eseguendo, esso contiene il codice che verrà eseguito

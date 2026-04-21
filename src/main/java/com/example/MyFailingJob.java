@@ -20,7 +20,7 @@ public final class MyFailingJob {
     public static void main(final String[] args) throws InterruptedException, JMRException {
         if (args.length < 5 || args.length > 6) {
             System.err.println(
-                    "Usage: MyFailingJob <serialized-books-data-path> <jar-path> <host> <port> <failure-phase: map|reduce> [data-provider-host]");
+                    "Usage: MyFailingJob <serialized-books-data-path> <jar-path> <host> <port> <failure-phase: map|reduce>");
             System.exit(1);
         }
 
@@ -29,7 +29,7 @@ public final class MyFailingJob {
         final String host = args[2];
         final int port = Integer.parseInt(args[3]);
         final FailurePhase failurePhase = FailurePhase.fromArgument(args[4]);
-        final String dataProviderHost = args.length >= 6 ? args[5] : "localhost";
+        final String dataProviderHost = "localhost";
 
         final List<Path> books = collectSerializedBooks(Path.of(booksPath));
         final LocalGrpcDataProvider<String> dataProviderServer = new LocalGrpcDataProvider<>(books);
@@ -45,7 +45,8 @@ public final class MyFailingJob {
                 while (true) {
                     final it.jmr.client.MapReduceClient.JobProgressSnapshot progress = jmrClient.getJobProgress();
                     final String status = progress.status();
-                    System.out.printf("Job status: %s | MAP %d%% | REDUCE %d%%%n", status, progress.mapProgress(), progress.reduceProgress());
+                    System.out.printf("Job status: %s | MAP %d%% | REDUCE %d%%%n", status, progress.mapProgress(),
+                            progress.reduceProgress());
 
                     if ("FAILED".equals(status)) {
                         System.out.println("Failing job reached FAILED as expected.");
@@ -69,7 +70,8 @@ public final class MyFailingJob {
     private static List<Path> collectSerializedBooks(final Path booksFolder) {
         final List<Path> books = new ArrayList<>();
         try (var paths = java.nio.file.Files.list(booksFolder)) {
-            paths.filter(java.nio.file.Files::isRegularFile).filter(path -> path.toString().endsWith(".ser")).forEach(books::add);
+            paths.filter(java.nio.file.Files::isRegularFile).filter(path -> path.toString().endsWith(".ser"))
+                    .forEach(books::add);
         } catch (Exception e) {
             throw new RuntimeException("Failed to list book files in folder: " + booksFolder, e);
         }
@@ -80,7 +82,8 @@ public final class MyFailingJob {
         return books;
     }
 
-    private static JobConfiguration<String, Integer, Integer> createFailingJob(final LocalGrpcDataProvider<String> dataProviderServer,
+    private static JobConfiguration<String, Integer, Integer> createFailingJob(
+            final LocalGrpcDataProvider<String> dataProviderServer,
             final FailurePhase failurePhase) {
         return Job.builder().readFrom(dataProviderServer).map(line -> {
             if (failurePhase == FailurePhase.MAP) {
@@ -121,9 +124,10 @@ public final class MyFailingJob {
 
         static FailurePhase fromArgument(final String argument) {
             return switch (argument.toLowerCase()) {
-            case "map" -> MAP;
-            case "reduce" -> REDUCE;
-            default -> throw new IllegalArgumentException("Unsupported failure phase: " + argument + ". Expected map or reduce.");
+                case "map" -> MAP;
+                case "reduce" -> REDUCE;
+                default -> throw new IllegalArgumentException(
+                        "Unsupported failure phase: " + argument + ". Expected map or reduce.");
             };
         }
     }
